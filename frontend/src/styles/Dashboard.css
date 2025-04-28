@@ -1,0 +1,412 @@
+:root {
+    --primary: #7B61FF;
+    --primary-dark: #5a41e8;
+    --success: #00C897;
+    --danger: #FF4D4F;
+    --info: #2D9CDB;
+    --warning: #F2994A;
+    --white: #ffffff;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-600: #4B5563;
+    --gray-800: #1F2937;
+    --border-radius: 12px;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
+  }
+  
+  /* Layout */
+  .dashboard-container {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    min-height: 100vh;
+    background: var(--gray-50);
+  }
+  
+  .sidebar {
+    background: #ec6f30;
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  .main-content {
+    padding: 30px;
+  }
+  
+  /* Sidebar */
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 40px;
+  }
+  
+  .logo-img {
+    width: 40px;
+  }
+  
+  .logo h2 {
+    color: var(--white);
+    font-size: 20px;
+  }
+  
+  nav ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  nav li {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: var(--border-radius);
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  
+  nav li.active, nav li:hover {
+    background: var(--primary);
+  }
+  
+  nav .icon {
+    margin-right: 10px;
+  }
+  
+  /* Top Bar */
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+  }
+  
+  .welcome-text h2 {
+    font-size: 24px;
+    margin-bottom: 5px;
+    color: var(--gray-800);
+  }
+  
+  .search-bar {
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    padding: 8px 15px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    width: 250px;
+  }
+  
+  .search-bar input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+  }
+  
+  /* Notification and Profile */
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .notification-btn {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--danger);
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-info span {
+  font-weight: 500;
+}
+
+.profile-info small {
+  color: var(--gray-600);
+}
+  
+  /* Stats */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-bottom: 30px;
+  }
+  
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+  }
+  
+  .stat-icon {
+    font-size: 30px;
+  }
+  
+  .stat-info h3 {
+    font-size: 16px;
+    color: var(--gray-600);
+    margin: 0;
+  }
+  
+  .stat-info p {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--gray-800);
+  }
+  
+  /* Admin Actions Buttons */
+  .admin-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 30px;
+    gap: 20px;
+  }
+  
+  .add-employee-btn, .block-employee-btn {
+    padding: 12px 20px;
+    border-radius: var(--border-radius);
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: var(--transition);
+  }
+  
+  .add-employee-btn {
+    background: var(--primary);
+    color: var(--white);
+  }
+  
+  .add-employee-btn:hover {
+    background: var(--primary-dark);
+  }
+  
+  .block-employee-btn {
+    background: var(--white);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  
+  .block-employee-btn:hover {
+    background: var(--danger);
+    color: var(--white);
+  }
+  
+  /* Dashboard Grid */
+  .dashboard-grid {
+    display: grid;
+    gap: 30px;
+  }
+  
+  /* Performance Table */
+  .employee-performance {
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+  }
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .employees-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  thead tr {
+    background: var(--gray-100);
+  }
+  
+  th, td {
+    padding: 12px;
+    text-align: left;
+    font-size: 14px;
+  }
+  
+  tbody tr:hover {
+    background: var(--gray-50);
+  }
+  
+  .employee-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .employee-avatar {
+    width: 30px;
+    height: 30px;
+    background: var(--primary);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  
+  /* Status */
+  .status {
+    padding: 5px 10px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  
+  .status.active {
+    background: rgba(0, 200, 151, 0.1);
+    color: var(--success);
+  }
+  
+  .status.inactive {
+    background: rgba(255, 77, 79, 0.1);
+    color: var(--danger);
+  }
+  
+  /* Charts */
+  .charts-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+  }
+  
+  .employee-chart, .trend-chart {
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+  }
+  
+  .employee-chart h3, .trend-chart h3 {
+    margin-bottom: 15px;
+  }
+  
+  .line-graph svg, .pie-chart svg {
+    width: 100%;
+    height: 200px;
+  }
+  
+  /* Activities */
+  .activity-section {
+    background: var(--white);
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+  }
+  
+  .activity-list {
+    margin-top: 20px;
+  }
+  
+  .activity-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+  
+  .activity-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  .activity-time {
+    font-size: 12px;
+    color: var(--gray-600);
+  }
+/* Add this in Dashboard.css or main CSS file */
+
+/* Modal background overlay */
+.modal-overlay {
+    position: fixed; /* IMPORTANT: fix to entire screen */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999; /* Ensure it's on top of everything */
+  }
+  
+  /* Modal content */
+  .modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 400px; /* or whatever size you want */
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    position: relative;
+  }
+  
+  /* Modal header */
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  /* Close button */
+  .close-btn {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  
+  /* Modal footer */
+  .modal-footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  

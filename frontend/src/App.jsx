@@ -1,7 +1,17 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import Login from "./pages/Login";
-import "src/styles/App.css";
+import { 
+  createBrowserRouter, 
+  RouterProvider, 
+  Route, 
+  createRoutesFromElements,
+  Link 
+} from "react-router-dom";
+import Register from "@/pages/Register";
+import Login from "@/pages/Login";
+import Dashboard from "@/pages/Dashboard";
+import "@/styles/App.css";
+import { AuthProvider } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
 
 function Home() {
   return (
@@ -17,7 +27,9 @@ function Home() {
           <a href="#">Company</a>
         </div>
         <div className="nav-actions">
-          <button className="nav-btn">Register</button>
+          <Link to="/register">
+            <button className="nav-btn">Register</button>
+          </Link>
           <button className="nav-btn">Request a Demo</button>
         </div>
       </nav>
@@ -73,15 +85,33 @@ function Home() {
 }
 
 function App() {
+  const router = createBrowserRouter(
+    createRoutesFromElements(
+      <>
+        <Route path="/" element={<Home />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <Dashboard />
+            </PrivateRoute>
+          }
+        />
+      </>
+    ),
+    {
+      future: {
+        v7_startTransition: true,
+      },
+    }
+  );
+
   return (
-    <Router>
-      <div className="app">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-      </div>
-    </Router>
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   );
 }
 
