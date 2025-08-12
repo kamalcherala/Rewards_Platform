@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "src/styles/Login.css";
 import { useAuth } from "../context/AuthContext";
-console.log("API:", import.meta.env.VITE_API_URL);
-
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +11,16 @@ function Login() {
   const [error, setError] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Get API URL with fallback
+  const getApiUrl = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      console.warn("VITE_API_URL not found, using localhost");
+      return "http://localhost:5000";
+    }
+    return apiUrl.trim(); // Remove any extra spaces
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -31,38 +39,41 @@ function Login() {
     }
 
     setIsLoading(true);
+    const apiUrl = getApiUrl();
 
     try {
-      console.log("Sending login request to /api/auth/login with:", {
-        email: trimmedEmail,
-      });
+      console.log("Sending login request to:", `${apiUrl}/api/auth/login`);
+      console.log("Email:", trimmedEmail);
     
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include",
+        credentials: "include", // Important for cookies
         body: JSON.stringify({
           email: trimmedEmail,
           password: trimmedPassword,
         }),
       });
 
+      // Check if the response is ok
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Login failed:", response.status, errorText);
+        let errorMessage = "Login failed";
         
         try {
-          // Try to parse as JSON if possible
+          const errorText = await response.text();
+          console.error("Login failed:", response.status, errorText);
+          
+          // Try to parse as JSON
           const errorData = JSON.parse(errorText);
-          throw new Error(errorData.message || "Login failed");
-        } catch (jsonError) {
-          // If parsing fails, use status text
-          throw new Error(`Login failed: ${response.statusText}`);
+          errorMessage = errorData.message || errorMessage;
+        } catch (parseError) {
+          // If not JSON, use status text
+          errorMessage = `${errorMessage}: ${response.statusText}`;
         }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -76,10 +87,24 @@ function Login() {
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError(err.message || "An error occurred during login. Please try again.");
+      
+      // Handle different types of errors
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError("Cannot connect to server. Please check if the backend is running.");
+      } else if (err.message.includes('NetworkError') || err.message.includes('CORS')) {
+        setError("Network error. Please try again later.");
+      } else {
+        setError(err.message || "An error occurred during login. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    const apiUrl = getApiUrl();
+    console.log("Redirecting to Google OAuth:", `${apiUrl}/api/auth/google`);
+    window.location.href = `${apiUrl}/api/auth/google`;
   };
 
   return (
@@ -140,7 +165,11 @@ function Login() {
           </div>
 
           <div className="social-login">
-            <button className="google-login" type="button">
+            <button
+              className="google-login"
+              type="button"
+              onClick={handleGoogleLogin}
+            >
               <img
                 src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSw3LcV3idrkKVHSEdUcJCxHawvIUzufH5AmA&s"
                 alt="Google Icon"
@@ -150,6 +179,15 @@ function Login() {
             </button>
           </div>
         </form>
+
+        {/* Debug info (remove in production) */}
+        {import.meta.env.DEV && (
+          <div style={{ marginTop: '20px', padding: '10px', backgroundColor: '#f0f0f0', fontSize: '12px' }}>
+            <strong>Debug Info:</strong><br />
+            API URL: {getApiUrl()}<br />
+            Environment: {import.meta.env.MODE}
+          </div>
+        )}
       </div>
     </div>
   );
