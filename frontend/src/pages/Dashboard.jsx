@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import "src/styles/Dashboard.css";
+
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [error, setError] = useState("");
@@ -18,109 +19,158 @@ function Dashboard() {
     startDate: ""
   });
   const [blockEmployeeId, setBlockEmployeeId] = useState("");
-  const [photoPreview, setPhotoPreview] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+  // Get API URL with fallback
+  const getApiUrl = () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+      console.warn("VITE_API_URL not found, using localhost");
+      return "http://localhost:5000";
+    }
+    return apiUrl.trim(); // Remove any extra spaces
+  };
 
-        if (!response.ok) {
-          throw new Error("Unauthorized or invalid token");
+ useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const tokenFromUrl = params.get("token");
+
+  if (tokenFromUrl) {
+    localStorage.setItem("token", tokenFromUrl);
+    // Clean up URL
+    window.history.replaceState({}, document.title, "/dashboard");
+  }
+
+  const fetchUser = async () => {
+    const apiUrl = getApiUrl();
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No token found");
+
+      console.log("Fetching user from:", `${apiUrl}/api/auth/me`);
+      
+      const response = await fetch(`${apiUrl}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include", // Include cookies
+      });
+
+      if (!response.ok) {
+        console.error("Fetch user failed:", response.status, response.statusText);
+        
+        if (response.status === 401) {
+          throw new Error("Session expired. Please log in again.");
         }
+        
+        throw new Error("Unauthorized or invalid token");
+      }
 
-        const data = await response.json();
-        setUser(data.user);
-      } catch (err) {
-        console.error("Fetch user error:", err);
+      const data = await response.json();
+      console.log("User data received:", data);
+      setUser(data.user);
+    } catch (err) {
+      console.error("Fetch user error:", err);
+      
+      // Handle different types of errors
+      if (err.message.includes('fetch') || err.name === 'TypeError') {
+        setError("Cannot connect to server. Please check your connection.");
+      } else if (err.message.includes('Session expired') || err.message.includes('No token')) {
+        setError("Session expired. Please log in again.");
+        // Auto redirect to login after a short delay
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }, 2000);
+      } else {
         setError("Authentication error. Please log in again.");
       }
-    };
+    }
+  };
 
-    fetchUser();
-  }, []);
+  fetchUser();
+}, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
   };
 
-  const handleInputChange = e => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEmployeeData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handlePhotoChange = e => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setPhotoPreview(reader.result);
-      reader.readAsDataURL(file);
-    }
+    setEmployeeData({
+      ...employeeData,
+      [name]: value
+    });
   };
 
   const handleAddEmployee = async (e) => {
     e.preventDefault();
+    const apiUrl = getApiUrl();
+    
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/employees`, {
-        method: 'POST',
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${apiUrl}/api/employees`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(employeeData)
+        credentials: "include",
+        body: JSON.stringify(employeeData),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to add employee');
-        
-        
+      if (response.ok) {
+        console.log("Employee added successfully");
+        setShowAddModal(false);
+        // Reset form
+        setEmployeeData({
+          firstName: "",
+          lastName: "",
+          number: "",
+          email: "",
+          employeeId: "",
+          salary: "",
+          role: "",
+          startDate: ""
+        });
+        // You might want to refresh employee list here
+      } else {
+        console.error("Failed to add employee");
       }
-
-      // Reset form and close modal
-      setEmployeeData({
-        firstName: "",
-        lastName: "",
-        number: "",
-        email: "",
-        employeeId: "",
-        salary: "",
-        role: "",
-        startDate: ""
-      });
-      setShowAddModal(false);
-      
-      // Optionally refresh employee list here
     } catch (err) {
-      console.error('Error adding employee:', err);
+      console.error("Error adding employee:", err);
     }
   };
 
   const handleBlockEmployee = async (e) => {
     e.preventDefault();
+    const apiUrl = getApiUrl();
+    
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/employees/${blockEmployeeId}/block`, {
-        method: 'PUT',
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${apiUrl}/api/employees/block`, {
+        method: "POST",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({ employeeId: blockEmployeeId }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to block employee');
+      if (response.ok) {
+        console.log("Employee blocked successfully");
+        setShowBlockModal(false);
+        setBlockEmployeeId("");
+        // You might want to refresh employee list here
+      } else {
+        console.error("Failed to block employee");
       }
-
-      setBlockEmployeeId("");
-      setShowBlockModal(false);
-      
-      // Optionally refresh employee list here
     } catch (err) {
-      console.error('Error blocking employee:', err);
+      console.error("Error blocking employee:", err);
     }
   };
 
@@ -130,8 +180,47 @@ function Dashboard() {
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         className="dashboard-error"
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          minHeight: '100vh',
+          padding: '20px',
+          textAlign: 'center'
+        }}
       >
-        <h2>{error}</h2>
+        <h2 style={{ color: '#e74c3c', marginBottom: '15px' }}>{error}</h2>
+        <button 
+          onClick={() => navigate("/login")}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#3498db',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          Go to Login
+        </button>
+        
+        {/* Debug info (remove in production) */}
+        {import.meta.env.DEV && (
+          <div style={{ 
+            marginTop: '20px', 
+            padding: '10px', 
+            backgroundColor: '#f8f9fa', 
+            borderRadius: '5px',
+            fontSize: '12px',
+            maxWidth: '400px'
+          }}>
+            <strong>Debug Info:</strong><br />
+            API URL: {getApiUrl()}<br />
+            Environment: {import.meta.env.MODE}<br />
+            Token exists: {localStorage.getItem("token") ? "Yes" : "No"}
+          </div>
+        )}
       </motion.div>
     );
   }
@@ -142,9 +231,23 @@ function Dashboard() {
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         className="dashboard-loading"
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          minHeight: '100vh' 
+        }}
       >
-        <div className="loader"></div>
-        <p>Loading...</p>
+        <div className="loader" style={{
+          border: '4px solid #f3f3f3',
+          borderTop: '4px solid #3498db',
+          borderRadius: '50%',
+          width: '50px',
+          height: '50px',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+        <p style={{ marginTop: '15px' }}>Loading...</p>
       </motion.div>
     );
   }
@@ -506,51 +609,133 @@ function Dashboard() {
       </main>
 
       {/* Add Employee Modal */}
-      {/* Add Employee Modal */}
- {/* Add Employee Modal */}
- <AnimatePresence>
+      <AnimatePresence>
         {showAddModal && (
-          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="modal-content big-modal" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}>
+          <motion.div 
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="modal-content"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+            >
               <div className="modal-header">
                 <h3>Add New Employee</h3>
                 <button className="close-btn" onClick={() => setShowAddModal(false)}>×</button>
               </div>
-              <form className="modal-form" onSubmit={handleAddEmployee}>
-                <div className="modal-body">
-                  <div className="modal-photo">
-                    <label className="photo-upload">
-                      {photoPreview ? (
-                        <img src={photoPreview} alt="Preview" className="photo-preview" />
-                      ) : (
-                        <div className="photo-placeholder">Upload Photo</div>
-                      )}
-                      <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: "none" }} />
-                      <button type="button" className="upload-btn">Upload Photo</button>
-                    </label>
+              <form onSubmit={handleAddEmployee}>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="firstName">First Name</label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={employeeData.firstName}
+                      onChange={handleInputChange}
+                      required
+                    />
                   </div>
-                  <div className="modal-fields">
-                    <div className="field-group">
-                      <input type="text" name="firstName" placeholder="First Name" value={employeeData.firstName} onChange={handleInputChange} required />
-                      <input type="text" name="lastName" placeholder="Last Name" value={employeeData.lastName} onChange={handleInputChange} required />
-                    </div>
-                    <div className="field-group">
-                      <input type="email" name="email" placeholder="Email" value={employeeData.email} onChange={handleInputChange} required />
-                      <input type="text" name="employeeId" placeholder="Employee ID" value={employeeData.employeeId} onChange={handleInputChange} required />
-                    </div>
-                    <div className="field-group">
-                      <input type="text" name="number" placeholder="Phone Number" value={employeeData.number} onChange={handleInputChange} required />
-                      <input type="text" name="salary" placeholder="Salary" value={employeeData.salary} onChange={handleInputChange} required />
-                    </div>
-                    <div className="field-group">
-                      <input type="text" name="role" placeholder="Role" value={employeeData.role} onChange={handleInputChange} required />
-                      <input type="date" name="startDate" value={employeeData.startDate} onChange={handleInputChange} required />
-                    </div>
+                  <div className="form-group">
+                    <label htmlFor="lastName">Last Name</label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={employeeData.lastName}
+                      onChange={handleInputChange}
+                      required
+                    />
                   </div>
                 </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="number">Number</label>
+                    <input
+                      type="tel"
+                      id="number"
+                      name="number"
+                      value={employeeData.number}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="email">Email</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={employeeData.email}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="employeeId">Employee ID</label>
+                  <input
+                    type="text"
+                    id="employeeId"
+                    name="employeeId"
+                    value={employeeData.employeeId}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="salary">Salary</label>
+                    <input
+                      type="number"
+                      id="salary"
+                      name="salary"
+                      value={employeeData.salary}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="role">Role</label>
+                    <select
+                      id="role"
+                      name="role"
+                      value={employeeData.role}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select Role</option>
+                      <option value="developer">Developer</option>
+                      <option value="designer">Designer</option>
+                      <option value="manager">Manager</option>
+                      <option value="marketing">Marketing</option>
+                      <option value="sales">Sales</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="startDate">Start Date</label>
+                  <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    value={employeeData.startDate}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                
                 <div className="modal-footer">
                   <button type="button" className="cancel-btn" onClick={() => setShowAddModal(false)}>Cancel</button>
-                  <button type="submit" className="submit-btn">Create Employee</button>
+                  <button type="submit" className="submit-btn">Add Employee</button>
                 </div>
               </form>
             </motion.div>
@@ -561,18 +746,46 @@ function Dashboard() {
       {/* Block Employee Modal */}
       <AnimatePresence>
         {showBlockModal && (
-          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="modal-content small-modal" initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }}>
+          <motion.div 
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="modal-content block-modal"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+            >
               <div className="modal-header">
                 <h3>Block Employee</h3>
                 <button className="close-btn" onClick={() => setShowBlockModal(false)}>×</button>
               </div>
               <form onSubmit={handleBlockEmployee}>
-                <input type="text" placeholder="Employee ID" value={blockEmployeeId} onChange={e => setBlockEmployeeId(e.target.value)} required />
-                <textarea placeholder="Reason for Blocking" required></textarea>
+                <div className="form-group">
+                  <label htmlFor="blockEmployeeId">Employee ID</label>
+                  <input
+                    type="text"
+                    id="blockEmployeeId"
+                    value={blockEmployeeId}
+                    onChange={(e) => setBlockEmployeeId(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="blockReason">Reason for Blocking</label>
+                  <textarea
+                    id="blockReason"
+                    rows="4"
+                    required
+                  ></textarea>
+                </div>
+                
                 <div className="modal-footer">
                   <button type="button" className="cancel-btn" onClick={() => setShowBlockModal(false)}>Cancel</button>
-                  <button type="submit" className="block-btn">Block</button>
+                  <button type="submit" className="block-btn">Block Employee</button>
                 </div>
               </form>
             </motion.div>
@@ -580,6 +793,12 @@ function Dashboard() {
         )}
       </AnimatePresence>
 
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
